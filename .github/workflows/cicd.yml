@@ -1,0 +1,85 @@
+name: Django Oscar CI/CD pipeline
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Run tests
+        env:
+          POSTGRES_VERSION: postgres:16.11-alpine
+          DATABASE_USER: django-oscar
+          DATABASE_PASSWORD: django-oscar
+          DATABASE_NAME: oscar
+          DATABASE_HOST: localhost
+        run: |
+          docker run --name django-oscar-postgres \
+            -e POSTGRES_USER=$DATABASE_USER \
+            -e POSTGRES_PASSWORD=$DATABASE_PASSWORD \
+            -e POSTGRES_DB=$DATABASE_NAME \
+            -d \
+            -p 5432:5432 \
+            $POSTGRES_VERSION
+          make test
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 'lts/Krypton'
+      - name: Install dependencies
+        run: make install
+      - name: Lint Python
+        run: make lint
+      - name: Lint JavaScript
+        run: npm run eslint
+  build:
+    name: Build and create documentation
+    runs-on: ubuntu-latest
+    needs: [test, lint]
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v5
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 'lts/Krypton'
+      - name: Build Django Oscar sandbox
+        run: make sandbox
+      - name: Upload sandbox as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sandbox
+          path: sandbox
+          retention-days: 90
+      - name: Create documentation
+        run: make docs
+      - name: Upload documentation as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: docs/build
+          retention-days: 90
