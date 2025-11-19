@@ -45,7 +45,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 'lts/Jod'
+          node-version: 'lts/Krypton'
       - name: Install dependencies
         run: make install
       - name: Lint Python
@@ -66,7 +66,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 'lts/Jod'
+          node-version: 'lts/Krypton'
       - name: Build Django Oscar sandbox
         run: make sandbox
       - name: Upload sandbox as an artifact
